@@ -108,4 +108,20 @@ public class QueryEngine {
             System.out.println(ex.getMessage());
         }
     }
+
+    private  List<ResultClass> returnDummyResults(int maxNoOfDocs) {
+
+        List<ResultClass> doc_score_list = new ArrayList<ResultClass>();
+            for (int i = 0; i < maxNoOfDocs; ++i) {
+                Document doc = new Document();
+                doc.add(new TextField("title", "", Field.Store.YES));
+                doc.add(new StringField("docid", "Doc"+Integer.toString(i+1), Field.Store.YES));
+                ResultClass objResultClass= new ResultClass();
+                objResultClass.DocName =doc;
+                doc_score_list.add(objResultClass);
+            }
+
+        return doc_score_list;
+    }
+
 }
