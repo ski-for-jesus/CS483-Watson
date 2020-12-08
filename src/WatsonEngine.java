@@ -34,21 +34,24 @@ public class WatsonEngine {
 
     @SuppressWarnings("deprecation")
 	private void buildIndex() throws IOException {
-        // Get file from resources folder
     	// Lines of object declaration taken from Lucene in 5 minutes example
+    	edu.stanford.nlp.simple.Document doc;
     	StandardAnalyzer analyzer = new StandardAnalyzer();
     	IndexWriterConfig config = new IndexWriterConfig(analyzer);
     	Directory index = new RAMDirectory();
     	IndexWriter writer = new IndexWriter(index, config);
-    	// remember to close writer
-        ClassLoader classLoader = getClass().getClassLoader();
-        File file = new File(classLoader.getResource(inputFilePath).getFile());
-
+    	File file = new File(inputFilePath);
         try (Scanner inputScanner = new Scanner(file)) {
             while (inputScanner.hasNextLine()) {
-                //System.out.println(inputScanner.nextLine());
-            	String currLine = inputScanner.nextLine();
-            	documentAdder(writer, currLine);
+            	// CoreDocument used from Stanford NLP to avoid overlap with 
+            	// Lucene Document Class
+            	doc = new edu.stanford.nlp.simple.Document(inputScanner.nextLine());
+            	for(Sentence sent : doc.sentences()) {
+            		System.out.println(sent.words());
+            		System.out.println(sent.lemmas());
+            	}
+            	//documentAdder(writer, currLine);*/
+
             }
             inputScanner.close();
         } catch (IOException e) {
@@ -103,7 +106,7 @@ public class WatsonEngine {
 
     public static void main(String[] args ) {
         try {
-            String fileName = "input.txt";
+            String fileName = "questions.txt";
             String[] query13a = {"information", "retrieval"};
             WatsonEngine objWatsonEngine = new WatsonEngine(fileName);
         }
@@ -112,7 +115,7 @@ public class WatsonEngine {
         }
     }
 
-    private  List<ResultClass> returnDummyResults(int maxNoOfDocs) {
+   private  List<ResultClass> returnDummyResults(int maxNoOfDocs) {
 
         List<ResultClass> doc_score_list = new ArrayList<ResultClass>();
             for (int i = 0; i < maxNoOfDocs; ++i) {
