@@ -8,6 +8,8 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 
+import edu.stanford.nlp.simple.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.io.File;
@@ -16,22 +18,23 @@ import java.util.Scanner;
 
 /* Ted Seipp
  * CSC 483
- * 6 September 2020
+ * 9 December 2020
+ * Watson Project
  * Professor Surdeanu
  */
 
-public class QueryEngine {
+public class WatsonEngine {
     boolean indexExists=false;
     String inputFilePath ="";
 
-    public QueryEngine(String inputFile) throws IOException{
+    public WatsonEngine(String inputFile) throws IOException{
         inputFilePath =inputFile;
         buildIndex();
     }
 
     @SuppressWarnings("deprecation")
 	private void buildIndex() throws IOException {
-        //Get file from resources folder
+        // Get file from resources folder
     	// Lines of object declaration taken from Lucene in 5 minutes example
     	StandardAnalyzer analyzer = new StandardAnalyzer();
     	IndexWriterConfig config = new IndexWriterConfig(analyzer);
@@ -102,7 +105,7 @@ public class QueryEngine {
         try {
             String fileName = "input.txt";
             String[] query13a = {"information", "retrieval"};
-            QueryEngine objQueryEngine = new QueryEngine(fileName);
+            WatsonEngine objWatsonEngine = new WatsonEngine(fileName);
         }
         catch (Exception ex) {
             System.out.println(ex.getMessage());
