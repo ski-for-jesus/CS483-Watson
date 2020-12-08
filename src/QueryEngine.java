@@ -1,5 +1,3 @@
-package edu.arizona.cs;
-
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -110,68 +108,4 @@ public class QueryEngine {
             System.out.println(ex.getMessage());
         }
     }
-
-    public List<ResultClass> runQ1_1(String[] query) throws java.io.FileNotFoundException,java.io.IOException {
-        if(!indexExists) {
-            buildIndex();
-        }
-        List<ResultClass>  ans=new ArrayList<ResultClass>();
-        ans =returnDummyResults(3);
-        return ans;
-    }
-
-    public List<ResultClass> runQ1_2_a(String[] query) throws java.io.FileNotFoundException,java.io.IOException {
-        if(!indexExists) {
-            buildIndex();
-        }
-        List<ResultClass>  ans=new ArrayList<ResultClass>();
-        ans =returnDummyResults(3);
-        return ans;
-    }
-
-    public List<ResultClass> runQ1_2_b(String[] query) throws java.io.FileNotFoundException,java.io.IOException {
-        if(!indexExists) {
-            buildIndex();
-        }
-        List<ResultClass>  ans=new ArrayList<ResultClass>();
-        ans =returnDummyResults(1);
-        return ans;
-    }
-
-    public List<ResultClass> runQ1_2_c(String[] query) throws java.io.FileNotFoundException,java.io.IOException {
-        if(!indexExists) {
-            buildIndex();
-        }
-        List<ResultClass>  ans=new ArrayList<ResultClass>();
-        ans =returnDummyResults(2);
-        return ans;
-    }
-
-    public List<ResultClass> runQ1_3(String[] query) throws java.io.FileNotFoundException,java.io.IOException {
-
-        if(!indexExists) {
-            buildIndex();
-        }
-        StringBuilder result = new StringBuilder("");
-        List<ResultClass>  ans=new ArrayList<ResultClass>();
-        ans =returnDummyResults(4);
-        return ans;
-    }
-
-
-    private  List<ResultClass> returnDummyResults(int maxNoOfDocs) {
-
-        List<ResultClass> doc_score_list = new ArrayList<ResultClass>();
-            for (int i = 0; i < maxNoOfDocs; ++i) {
-                Document doc = new Document();
-                doc.add(new TextField("title", "", Field.Store.YES));
-                doc.add(new StringField("docid", "Doc"+Integer.toString(i+1), Field.Store.YES));
-                ResultClass objResultClass= new ResultClass();
-                objResultClass.DocName =doc;
-                doc_score_list.add(objResultClass);
-            }
-
-        return doc_score_list;
-    }
-
 }
