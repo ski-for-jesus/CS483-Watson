@@ -24,39 +24,46 @@ import java.util.Scanner;
  */
 
 public class WatsonEngine {
-    boolean indexExists=false;
-    String inputFilePath ="";
+    boolean indexExists = false;
+    String inputFilePath = "";
 
     public WatsonEngine(String inputFile) throws IOException{
-        inputFilePath =inputFile;
+        inputFilePath = inputFile;
         buildIndex();
     }
 
     @SuppressWarnings("deprecation")
 	private void buildIndex() throws IOException {
-    	// Lines of object declaration taken from Lucene in 5 minutes example
+    	// Explicit declaration used because of multiple
+    	// Document Classes
     	edu.stanford.nlp.simple.Document doc;
     	StandardAnalyzer analyzer = new StandardAnalyzer();
     	IndexWriterConfig config = new IndexWriterConfig(analyzer);
     	Directory index = new RAMDirectory();
+    	// FSDirectory finalIndex = FSDirectory.open(Paths.get("path here");
     	IndexWriter writer = new IndexWriter(index, config);
-    	File file = new File(inputFilePath);
-        try (Scanner inputScanner = new Scanner(file)) {
-            while (inputScanner.hasNextLine()) {
-            	// CoreDocument used from Stanford NLP to avoid overlap with 
-            	// Lucene Document Class
-            	doc = new edu.stanford.nlp.simple.Document(inputScanner.nextLine());
-            	for(Sentence sent : doc.sentences()) {
-            		System.out.println(sent.words());
-            		System.out.println(sent.lemmas());
-            	}
-            	//documentAdder(writer, currLine);*/
-
-            }
-            inputScanner.close();
+    	File wikiDir = new File(inputFilePath);
+    	for(File wiki : wikiDir.listFiles()) {
+    		System.out.println("Current wiki is " + wiki.getName() + "\n");
+    		File wikiDoc = new File(wiki.getPath());
+    		try (Scanner input = new Scanner(wikiDoc)) {
+    			while(input.hasNextLine()) {
+    				String currLine = input.nextLine();
+    				if(currLine.startsWith("[[")) {
+    					System.out.println(currLine);
+    				}
+    			}
+    				//System.out.println(input.nextLine());
+    				//doc = new edu.stanford.nlp.simple.Document(input.nextLine());
+                	//for(Sentence sent : doc.sentences()) {
+                		//System.out.println(sent.words());
+                		//System.out.println(sent.lemmas());
+    				//documentAdder(writer, currLine);
+            input.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+    	}
         indexExists = true;
     }
     
@@ -106,28 +113,11 @@ public class WatsonEngine {
 
     public static void main(String[] args ) {
         try {
-            String fileName = "questions.txt";
-            String[] query13a = {"information", "retrieval"};
-            WatsonEngine objWatsonEngine = new WatsonEngine(fileName);
+            String wikiDir = "src/files/";
+            WatsonEngine objWatsonEngine = new WatsonEngine(wikiDir);
         }
         catch (Exception ex) {
             System.out.println(ex.getMessage());
         }
     }
-
-   private  List<ResultClass> returnDummyResults(int maxNoOfDocs) {
-
-        List<ResultClass> doc_score_list = new ArrayList<ResultClass>();
-            for (int i = 0; i < maxNoOfDocs; ++i) {
-                Document doc = new Document();
-                doc.add(new TextField("title", "", Field.Store.YES));
-                doc.add(new StringField("docid", "Doc"+Integer.toString(i+1), Field.Store.YES));
-                ResultClass objResultClass= new ResultClass();
-                objResultClass.DocName =doc;
-                doc_score_list.add(objResultClass);
-            }
-
-        return doc_score_list;
-    }
-
 }
