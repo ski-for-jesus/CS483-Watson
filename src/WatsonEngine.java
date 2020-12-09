@@ -33,20 +33,29 @@ import java.util.Scanner;
  * Professor Surdeanu
  */
 
+/* Watson is represented as an engine class based off of the skeleton
+ * code from HW3. When created there are parameters for the index,
+ * the file path and a boolean representing if the index has been created.
+ */
 public class WatsonEngine {
     boolean indexExists = false;
     String inputFilePath = "";
     public Directory index;
 
+    // Constructor
     public WatsonEngine(String inputFile) throws IOException{
         inputFilePath = inputFile;
         buildIndex();
     }
 
+    /* Main work is done within this method, 
+     * all Lucene object stubs are created, and the index is set up
+     * then each line of the wiki article is read in and sent to be 
+     * added to the index based on title criteria.
+     */
 	private void buildIndex() throws IOException {
     	// Explicit declaration used because of multiple
     	// Document Classes
-    	edu.stanford.nlp.simple.Document doc;
     	StandardAnalyzer analyzer = new StandardAnalyzer();
     	IndexWriterConfig config = new IndexWriterConfig(analyzer);
     	index = FSDirectory.open(Paths.get("/Users/tedseipp/Desktop/CSC483Watson/CS483-Watson/indexes"));
@@ -77,7 +86,7 @@ public class WatsonEngine {
     		}
     	}
     	writer.close();
-    	IndexReader reader = DirectoryReader.open(index);
+    	/*IndexReader reader = DirectoryReader.open(index);
         final Fields fields = MultiFields.getFields(reader);
         final Iterator iterator = (Iterator) fields.iterator();
         java.util.Iterator<String> iterator2 = (java.util.Iterator<String>) iterator;
@@ -90,12 +99,17 @@ public class WatsonEngine {
                 System.out.println(term.utf8ToString());
                 term = it.next();
             }
-        }
+        }*/
         indexExists = true;
     }
     
+	/* This method is used to add the tokens read in
+	 * from the scanned txt file to the index created at
+	 * construction time.
+	 */
     public void documentAdder(IndexWriter writer, String currLine, Scanner input, boolean title) throws IOException {
     	Document currDoc = new Document();
+    	String rawData = "";
     	if(title) {
     		currLine = currLine.replace("[", "");
     		currLine = currLine.replace("]", "");
@@ -103,25 +117,21 @@ public class WatsonEngine {
     		//skip new line after title
     		input.nextLine();
     		currLine = input.nextLine();
-    		if(currLine.startsWith("CATEGORIES")) {
-    			String catData = "";
-    			while(!title(currLine) && input.hasNextLine()) {
-    				catData += currLine;
-    				currLine = input.nextLine();
-    			}
-    			// category data converted to stanfod nlp document for lemmatization
-    			edu.stanford.nlp.simple.Document sDoc = new edu.stanford.nlp.simple.Document(catData);
-    			List<String> lemmaTokens;
-    			String lemmatizedCat = "";
+    		// until the next title attribute all information to the title
+    		// in the same document
+    		while(!title(currLine) && input.hasNextLine()) {
+    			List<String> lemmatizedTokens;
+    			edu.stanford.nlp.simple.Document sDoc = new edu.stanford.nlp.simple.Document(currLine);
     			for(Sentence sent : sDoc.sentences()) {
-    				lemmaTokens = sent.lemmas();
-    				for(String token : lemmaTokens) {
-    					lemmatizedCat += token + " ";
+    				lemmatizedTokens = sent.lemmas();
+    				for(int i = 0; i < lemmatizedTokens.size(); i++) {
+    					rawData += lemmatizedTokens.get(i) + " ";
     				}
     			}
-    			currDoc.add(new TextField("title categories", lemmatizedCat, Field.Store.YES));
-    		}
+				currLine = input.nextLine();
+			}
     	}
+    	currDoc.add(new TextField("raw data", rawData, Field.Store.YES));
     	// add documents to index
     	writer.addDocument(currDoc);
     }
