@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Scanner;
@@ -136,6 +137,29 @@ public class WatsonEngine {
     	writer.addDocument(currDoc);
     }
     
+    public static void buildQuestionIndex(String file) throws FileNotFoundException {
+    	File questions = new File(file);
+    	Scanner input = new Scanner(questions);
+    	while(input.hasNextLine()) {
+    		String finalQuestion = "";
+    		String finalAnswer = "";
+    		// skip category
+    		input.nextLine();
+    		String question = input.nextLine();
+    		Sentence qSent = new Sentence(question);
+    		List<String> questionLemmas = qSent.lemmas();
+    		for(String token : questionLemmas) {
+    			finalQuestion += token + " ";
+    		}
+    		String answer = input.nextLine();
+    		Sentence aSent = new Sentence(answer);
+    		List<String> answerLemmas = qSent.lemmas();
+    		for(String token : answerLemmas) {
+    			finalAnswer += token + " ";
+    		}
+    	}
+    }
+    
     public boolean title(String scannedLine) {
     	if(scannedLine.startsWith("[[")) {
     		return true;
@@ -148,7 +172,9 @@ public class WatsonEngine {
         try {
         	// Directory to store wiki is hard coded
             String wikiDir = "src/files/";
+            String questionsFile = "questions.txt";
             WatsonEngine objWatsonEngine = new WatsonEngine(wikiDir);
+            buildQuestionIndex(questionsFile);
         }
         catch (Exception ex) {
             System.out.println(ex.getMessage());
