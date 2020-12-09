@@ -3,17 +3,27 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.Fields;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.MultiFields;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.search.intervals.IntervalIterator;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.RAMDirectory;
+import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.BytesRef;
 
 import edu.stanford.nlp.simple.*;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Scanner;
 
 /* Ted Seipp
@@ -26,6 +36,7 @@ import java.util.Scanner;
 public class WatsonEngine {
     boolean indexExists = false;
     String inputFilePath = "";
+    public Directory index;
 
     public WatsonEngine(String inputFile) throws IOException{
         inputFilePath = inputFile;
@@ -39,7 +50,7 @@ public class WatsonEngine {
     	edu.stanford.nlp.simple.Document doc;
     	StandardAnalyzer analyzer = new StandardAnalyzer();
     	IndexWriterConfig config = new IndexWriterConfig(analyzer);
-    	Directory index = new RAMDirectory();
+    	index = FSDirectory.open(Paths.get("/Users/tedseipp/Desktop/CSC483Watson/CS483-Watson/indexes"));
     	// FSDirectory finalIndex = FSDirectory.open(Paths.get("path here");
     	IndexWriter writer = new IndexWriter(index, config);
     	File wikiDir = new File(inputFilePath);
@@ -49,70 +60,54 @@ public class WatsonEngine {
     		try (Scanner input = new Scanner(wikiDoc)) {
     			while(input.hasNextLine()) {
     				String currLine = input.nextLine();
-    				if(currLine.startsWith("[[")) {
-    					System.out.println(currLine);
+    				// process titles first
+    				 if(currLine.startsWith("[[")) {
+    					 if(currLine.startsWith("[[File") || currLine.startsWith("[[Media")
+    							 || currLine.startsWith("[[Image")) {
+    						 // skip titles that aren't really titles
+    						 continue;
+    					 }
+    					documentAdder(writer, currLine, input, true);
+    				} else {
+    					documentAdder(writer, currLine, input, false);
     				}
     			}
-    				//System.out.println(input.nextLine());
-    				//doc = new edu.stanford.nlp.simple.Document(input.nextLine());
-                	//for(Sentence sent : doc.sentences()) {
-                		//System.out.println(sent.words());
-                		//System.out.println(sent.lemmas());
-    				//documentAdder(writer, currLine);
-            input.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    			input.close();
+    		} catch (IOException e) {
+    			e.printStackTrace();
+    		}
     	}
+    	writer.close();
+    	IndexReader reader = DirectoryReader.open(index);
+        final Fields fields = MultiFields.getFields(reader);
+        final Iterator iterator = (Iterator) fields.iterator();
+
+        java.util.Iterator<String> iterator2 = (java.util.Iterator<String>) iterator;
+		while(iterator2.hasNext()) {
+            final String field = iterator2.next();
+            final Terms terms = MultiFields.getTerms(reader, field);
+            final TermsEnum it = terms.iterator();
+            BytesRef term = it.next();
+            while (term != null) {
+                System.out.println(term.utf8ToString());
+                term = it.next();
+            }
+        }
         indexExists = true;
     }
     
-    public static void documentAdder(IndexWriter writer, String currLine) throws IOException {
-    	System.out.println(currLine);
-    	Document doc1 = new Document();
-    	Document doc2 = new Document();
-    	Document doc3 = new Document();
-    	Document doc4 = new Document();
-    	// instead of splitting whole line, do index of first white space, text to left becomes doc id
-    	// text to right becomes tokens
-    	String[] tokenArray = currLine.split(" ");
-    	String docID = tokenArray[0].substring(3);
-    	System.out.println(docID);
-    	// index document id numbers as string fields, we dont want to tokenize them
-    	// then once docid is known add all of the tokens/words in the array to the document
-    	// overkill, hardcoded for 4 documents
-    	if(docID.equals("1")) {
-    		doc1.add(new StringField("docID", docID, Field.Store.YES));
-    		for(int i = 1; i < tokenArray.length; i++) {
-    			// can pass the entire remaining string to lucene
-    			// we want single text field for the string of tokens
-    			doc1.add(new TextField("token", tokenArray[i], Field.Store.YES));
-    		}
-    	} else if (docID.equals("2")) {
-    		doc2.add(new StringField("docID", docID, Field.Store.YES));
-    		for(int i = 1; i < tokenArray.length; i++) {
-    			doc2.add(new TextField("token", tokenArray[i], Field.Store.YES));
-    		}
-    	} else if (docID.equals("3")) {
-    		doc3.add(new StringField("docID", docID, Field.Store.YES));
-    		for(int i = 1; i < tokenArray.length; i++) {
-    			doc3.add(new TextField("token", tokenArray[i], Field.Store.YES));
-    		}
-    	} else {
-    		doc4.add(new StringField("docID", docID, Field.Store.YES));
-    		for(int i = 1; i < tokenArray.length; i++) {
-    			doc4.add(new TextField("token", tokenArray[i], Field.Store.YES));
-    		}
+    public static void documentAdder(IndexWriter writer, String currLine, Scanner input, Boolean title) throws IOException {
+    	Document currDoc = new Document();
+    	if(title) {
+    		currDoc.add(new StringField("title", currLine, Field.Store.YES));
     	}
     	// add documents to index
-    	writer.addDocument(doc1);
-    	writer.addDocument(doc2);
-    	writer.addDocument(doc3);
-    	writer.addDocument(doc4);
+    	writer.addDocument(currDoc);
     }
 
     public static void main(String[] args ) {
         try {
+        	// Directory to store wiki is hard coded
             String wikiDir = "src/files/";
             WatsonEngine objWatsonEngine = new WatsonEngine(wikiDir);
         }
