@@ -11,7 +11,14 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.intervals.IntervalIterator;
+import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
@@ -19,6 +26,7 @@ import org.apache.lucene.util.BytesRef;
 import edu.stanford.nlp.simple.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.io.File;
@@ -41,7 +49,9 @@ import java.util.Scanner;
 public class WatsonEngine {
     boolean indexExists = false;
     String inputFilePath = "";
-    public Directory index;
+    public static Directory index;
+    public static StandardAnalyzer analyzer;
+    public static ArrayList<String> results = new ArrayList<String>();
 
     // Constructor
     public WatsonEngine(String inputFile) throws IOException{
@@ -57,7 +67,7 @@ public class WatsonEngine {
 	private void buildIndex() throws IOException {
     	// Explicit declaration used because of multiple
     	// Document Classes
-    	StandardAnalyzer analyzer = new StandardAnalyzer();
+    	analyzer = new StandardAnalyzer();
     	IndexWriterConfig config = new IndexWriterConfig(analyzer);
     	index = FSDirectory.open(Paths.get("/Users/tedseipp/Desktop/CSC483Watson/CS483-Watson/indexes"));
     	IndexWriter writer = new IndexWriter(index, config);
@@ -87,20 +97,6 @@ public class WatsonEngine {
     		}
     	}
     	writer.close();
-    	/*IndexReader reader = DirectoryReader.open(index);
-        final Fields fields = MultiFields.getFields(reader);
-        final Iterator iterator = (Iterator) fields.iterator();
-        java.util.Iterator<String> iterator2 = (java.util.Iterator<String>) iterator;
-		while(iterator2.hasNext()) {
-            final String field = iterator2.next();
-            final Terms terms = MultiFields.getTerms(reader, field);
-            final TermsEnum it = terms.iterator();
-            BytesRef term = it.next();
-            while (term != null) {
-                System.out.println(term.utf8ToString());
-                term = it.next();
-            }
-        }*/
         indexExists = true;
     }
     
@@ -137,7 +133,10 @@ public class WatsonEngine {
     	writer.addDocument(currDoc);
     }
     
-    public static void buildQuestionIndex(String file) throws FileNotFoundException {
+    /* This method is used to create lemmatized questions 
+     * and answers for the query parser
+     */
+    public static void buildQuestionIndex(String file) throws ParseException, IOException {
     	File questions = new File(file);
     	Scanner input = new Scanner(questions);
     	while(input.hasNextLine()) {
@@ -146,17 +145,44 @@ public class WatsonEngine {
     		// skip category
     		input.nextLine();
     		String question = input.nextLine();
+    		if(question.isEmpty()) {
+    			continue;
+    		}
     		Sentence qSent = new Sentence(question);
     		List<String> questionLemmas = qSent.lemmas();
     		for(String token : questionLemmas) {
     			finalQuestion += token + " ";
     		}
     		String answer = input.nextLine();
+    		if(answer.isEmpty()) {
+    			continue;
+    		}
     		Sentence aSent = new Sentence(answer);
     		List<String> answerLemmas = qSent.lemmas();
     		for(String token : answerLemmas) {
     			finalAnswer += token + " ";
     		}
+    		runQuery(finalQuestion, finalAnswer);
+    	}
+    }
+    
+    /* method to compute results from lemmatized queries,
+     * examples taken from lucene website on how to use different
+     * objects
+     */
+    public static void runQuery(String question, String answer) throws ParseException, IOException {
+    	QueryParser qP = new QueryParser("raw data", analyzer);
+    	IndexReader r = DirectoryReader.open(index);
+    	IndexSearcher s = new IndexSearcher(r);
+    	Query q = qP.parse(question);
+    	// 100 hardcoded questions
+    	TopDocs trebeksHeroes = s.search(q, 100);
+    	ScoreDoc[] hits = trebeksHeroes.scoreDocs;
+    	for(int i = 0; i < hits.length; i++) {
+			Document doc = s.doc(hits[i].doc);
+			if(doc.get("title").equals(answer)) {
+				results.add(doc.get("title"));
+			}
     	}
     }
     
@@ -175,6 +201,7 @@ public class WatsonEngine {
             String questionsFile = "questions.txt";
             WatsonEngine objWatsonEngine = new WatsonEngine(wikiDir);
             buildQuestionIndex(questionsFile);
+            System.out.println(Arrays.toString(results.toArray()));
         }
         catch (Exception ex) {
             System.out.println(ex.getMessage());
