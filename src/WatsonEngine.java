@@ -182,6 +182,10 @@ public class WatsonEngine {
 			Document doc = s.doc(hits[i].doc);
 			if(doc.get("title").equals(answer)) {
 				results.add(doc.get("title"));
+			} else {
+				for(int j = 0; j < 1; j++) {
+					results.add(doc.get("title"));
+				}
 			}
     	}
     }
