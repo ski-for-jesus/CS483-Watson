@@ -9,3 +9,5 @@ In order to run project:
 4. dependencies contained in pom.xml file
 
 External JARs:
+All Lucene JARs
+Stanford NLP Simple JARs
